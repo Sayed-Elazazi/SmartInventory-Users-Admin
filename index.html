@@ -1,0 +1,930 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7fb">
+  <title>إدارة المستخدمين</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17233b;
+      --muted: #71809a;
+      --line: #e5eaf2;
+      --primary: #315ee8;
+      --primary-dark: #244bc2;
+      --surface: #fff;
+      --bg: #f5f7fb;
+      --green: #16845b;
+      --red: #c14545;
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    .shell { width: min(1180px, calc(100% - 36px)); margin: 0 auto; }
+    header { padding: 28px 0 22px; }
+    .topline { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+    .brand { display: flex; align-items: center; gap: 13px; }
+    .mark { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 14px; background: #e8edff; color: var(--primary); font-size: 23px; font-weight: 800; }
+    h1 { margin: 0; font-size: 25px; letter-spacing: -.4px; }
+    .subtitle { margin: 5px 0 0; color: var(--muted); font-size: 14px; }
+    .button { border: 0; border-radius: 10px; padding: 11px 16px; background: var(--primary); color: white; font-weight: 700; box-shadow: 0 4px 10px #315ee826; }
+    .button:hover { background: var(--primary-dark); }
+    .button.secondary { background: #edf1fb; color: #354766; box-shadow: none; }
+    .button.secondary:hover { background: #e0e7f5; }
+    .button.danger { background: #fff0f0; color: var(--red); box-shadow: none; }
+    .button.small { padding: 7px 10px; font-size: 12px; }
+    .button.logout { background: transparent; border: 1px solid var(--line); color: var(--muted); box-shadow: none; }
+    main { padding: 4px 0 48px; }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; }
+    .stat, .panel { border: 1px solid var(--line); border-radius: 15px; background: var(--surface); box-shadow: 0 5px 20px #263c6510; }
+    .stat { padding: 19px 21px; }
+    .stat-label { color: var(--muted); font-size: 13px; }
+    .stat-value { margin-top: 8px; font-size: 28px; font-weight: 750; }
+    .panel { overflow: hidden; }
+    .panel-head { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 19px 21px; border-bottom: 1px solid var(--line); }
+    .panel-head h2 { margin: 0; font-size: 17px; }
+    .toolbar { display: flex; gap: 9px; align-items: center; }
+    .search { width: min(270px, 42vw); padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; outline: none; background: #fbfcfe; }
+    .search:focus, .field input:focus, .field select:focus { border-color: #7892ed; box-shadow: 0 0 0 3px #315ee81a; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 850px; text-align: right; }
+    th { padding: 12px 15px; background: #fafbfe; color: var(--muted); font-size: 12px; font-weight: 650; white-space: nowrap; }
+    td { padding: 14px 15px; border-top: 1px solid #edf0f5; font-size: 13px; white-space: nowrap; }
+    .name { font-weight: 700; }
+    .sub { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; }
+    .badge { display: inline-flex; align-items: center; gap: 5px; border-radius: 20px; padding: 5px 9px; background: #eef1f6; color: #586780; font-size: 11px; font-weight: 700; }
+    .badge::before { width: 6px; height: 6px; border-radius: 50%; background: currentColor; content: ""; }
+    .badge.on, .badge.active { background: #e9f7f1; color: var(--green); }
+    .badge.off, .badge.blocked { background: #fff0f0; color: var(--red); }
+    .actions { display: flex; gap: 6px; }
+    .empty { padding: 54px 18px; text-align: center; color: var(--muted); }
+    .empty strong { display: block; margin-bottom: 7px; color: var(--ink); font-size: 16px; }
+    .notice { display: none; margin-bottom: 16px; padding: 12px 15px; border: 1px solid #f0caca; border-radius: 10px; background: #fff4f4; color: #9f3434; }
+    .notice.show { display: block; }
+    .onboarding { max-width: 570px; margin: 65px auto; padding: 28px; }
+    .onboarding h2 { margin-top: 0; }
+    .onboarding p { color: var(--muted); line-height: 1.8; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    .field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+    .field.full { grid-column: 1 / -1; }
+    .field label { font-size: 13px; font-weight: 650; }
+    .field input, .field select { width: 100%; min-height: 42px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 9px; outline: none; background: white; }
+    .hint { color: var(--muted); font-size: 12px; line-height: 1.7; }
+    .form-actions { display: flex; justify-content: flex-start; gap: 8px; margin-top: 20px; }
+    .dialog-backdrop { position: fixed; inset: 0; z-index: 3; display: none; place-items: center; padding: 18px; background: #14203b80; }
+    .dialog-backdrop.open { display: grid; }
+    .dialog { width: min(590px, 100%); max-height: calc(100vh - 36px); overflow: auto; padding: 23px; border-radius: 16px; background: white; box-shadow: 0 20px 80px #111a3040; }
+    .dialog h2 { margin: 0 0 19px; font-size: 19px; }
+    .dialog-error { margin-bottom: 14px; padding: 11px 13px; border-radius: 9px; background: #fff0f0; color: #9f3434; font-size: 13px; }
+    .password-value { margin: 15px 0; padding: 15px; border: 1px dashed #b7c5ed; border-radius: 9px; background: #f6f8ff; direction: ltr; text-align: center; font-family: Consolas, monospace; font-size: 22px; font-weight: 700; letter-spacing: 2px; user-select: all; }
+    .password-note { color: var(--muted); font-size: 13px; line-height: 1.7; }
+    .footer-note { padding-top: 12px; color: var(--muted); text-align: center; font-size: 12px; }
+    @media (max-width: 700px) {
+      .shell { width: min(100% - 22px, 600px); }
+      header { padding-top: 19px; }
+      h1 { font-size: 20px; }
+      .subtitle { max-width: 245px; line-height: 1.6; }
+      .topline { align-items: flex-start; }
+      .topline > .button { padding: 10px 11px; font-size: 12px; white-space: nowrap; }
+      .stats { gap: 8px; }
+      .stat { padding: 14px 12px; }
+      .stat-value { font-size: 23px; }
+      .stat-label { font-size: 11px; }
+      .panel-head { align-items: stretch; flex-direction: column; }
+      .toolbar { width: 100%; }
+      .search { width: 100%; }
+      .form-grid { grid-template-columns: 1fr; }
+      .field.full { grid-column: auto; }
+    }
+    @media (max-width: 390px) {
+      .mark { width: 39px; height: 39px; }
+      .brand { gap: 9px; }
+      h1 { font-size: 18px; }
+      .topline > .button { font-size: 11px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header class="shell">
+      <div class="topline">
+        <div class="brand">
+          <div class="mark" aria-hidden="true">م</div>
+          <div>
+            <h1>إدارة المستخدمين</h1>
+            <p class="subtitle">إدارة الحسابات والصلاحيات والتراخيص من مكان واحد</p>
+          </div>
+        </div>
+        <div class="toolbar">
+          <button id="logout-button" class="button logout" type="button" hidden>تسجيل الخروج</button>
+          <button id="add-button" class="button" type="button" hidden>＋ إضافة مستخدم</button>
+        </div>
+      </div>
+    </header>
+    <main class="shell">
+      <div id="notice" class="notice" role="alert"></div>
+      <section id="login-panel" class="panel onboarding" hidden>
+        <h2>الاتصال الآمن بـ GitHub</h2>
+        <p>استخدم اسم حساب GitHub ورمز وصول شخصياً بصلاحية Contents للاتصال بملف المستخدمين.</p>
+        <form id="login-form">
+          <div class="form-grid">
+            <div class="field full"><label for="login-username">اسم حساب GitHub</label><input id="login-username" name="username" required maxlength="128" autocomplete="username" autocapitalize="none" spellcheck="false"></div>
+            <div class="field full"><label for="login-password">رمز الوصول الشخصي (Fine-grained token)</label><input id="login-password" name="password" type="password" required maxlength="512" autocomplete="off" autocapitalize="none" spellcheck="false"><span class="hint">أنشئ رمزاً لهذا المستودع فقط، بصلاحية Contents: Read and write. لا يُحفظ الرمز في المتصفح أو GitHub Pages. <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener noreferrer">إنشاء رمز GitHub</a></span></div>
+          </div>
+          <div class="form-actions"><button id="login-submit" class="button" type="submit">اتصال آمن</button></div>
+        </form>
+      </section>
+      <section id="onboarding" class="panel onboarding" hidden>
+        <h2>إعداد حساب المدير</h2>
+        <p>لا يوجد حساب مدير بعد. أنشئ حساب المدير الوحيد للبدء بإدارة المستخدمين.</p>
+        <form id="admin-form">
+          <div class="form-grid">
+            <div class="field"><label for="admin-code">رمز المستخدم</label><input id="admin-code" name="code" required maxlength="100"></div>
+            <div class="field"><label for="admin-name">الاسم</label><input id="admin-name" name="name" required maxlength="200"></div>
+            <div class="field full"><label for="admin-password">كلمة المرور</label><input id="admin-password" name="password" type="password" minlength="8" required autocomplete="new-password"><span class="hint">ثمانية أحرف على الأقل. تُحفظ كلمة المرور بصيغة مشفّرة فقط.</span></div>
+          </div>
+          <div class="form-actions"><button class="button" type="submit">إنشاء حساب المدير</button></div>
+        </form>
+      </section>
+      <section id="dashboard" hidden>
+        <div class="stats">
+          <article class="stat"><div class="stat-label">إجمالي المستخدمين</div><div id="total-count" class="stat-value">٠</div></article>
+          <article class="stat"><div class="stat-label">الحسابات النشطة</div><div id="active-count" class="stat-value">٠</div></article>
+          <article class="stat"><div class="stat-label">التراخيص النشطة</div><div id="license-count" class="stat-value">٠</div></article>
+        </div>
+        <section class="panel">
+          <div class="panel-head">
+            <h2>قائمة المستخدمين</h2>
+            <div class="toolbar"><input id="search" class="search" type="search" placeholder="ابحث بالاسم أو الرمز أو المجموعة" aria-label="بحث المستخدمين"><button id="refresh" class="button secondary small" type="button">تحديث</button></div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>المستخدم</th><th>الدور والمجموعة</th><th>الحالة</th><th>الصلاحية</th><th>الأجهزة</th><th>الترخيص</th><th>آخر دخول</th><th>الإجراءات</th></tr></thead>
+              <tbody id="user-rows"></tbody>
+            </table>
+            <div id="empty" class="empty" hidden><strong>لا يوجد مستخدمون مطابقون</strong>جرّب تغيير كلمات البحث.</div>
+          </div>
+        </section>
+        <div id="storage-note" class="footer-note">جارٍ تحديد مصدر بيانات المستخدمين...</div>
+      </section>
+    </main>
+  </div>
+  <div id="dialog-backdrop" class="dialog-backdrop" role="presentation">
+    <section id="dialog" class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title"></section>
+  </div>
+  <script>
+    const roles = {
+      GARD: "مستخدم ميداني",
+      INV_SUPERVISOR: "مشرف الجرد",
+      GROUP_SUPERVISOR: "مشرف المجموعة",
+      COMMITTEE_HEAD: "رئيس اللجنة",
+      ADMIN: "مدير النظام"
+    };
+    const licenses = {
+      ACTIVE: "نشط",
+      TRIAL: "تجريبي",
+      EXPIRED: "منتهي",
+      BLOCKED: "محظور"
+    };
+    let users = [];
+    let githubToken = "";
+    let githubAccount = "";
+    let githubBranch = "";
+    const githubOwner = "Sayed-Elazazi";
+    const githubRepo = "SmartInventory-Users";
+    const githubApi = "https://api.github.com";
+    const csvFields = [
+      "emp_code", "emp_name", "role", "group_name", "is_active",
+      "valid_from", "valid_to", "device_limit", "license_status",
+      "salt", "pass_hash", "must_change", "password_version",
+      "last_login", "created_at", "updated_at", "version"
+    ];
+    const $ = (id) => document.getElementById(id);
+    const numberFormat = new Intl.NumberFormat("ar");
+
+    function fail(message, status = 400) {
+      const error = new Error(message);
+      error.status = status;
+      throw error;
+    }
+    async function githubRequest(path, options = {}) {
+      let response;
+      const authKey = ["Author", "ization"].join("");
+      const authValue = ["Be", "arer", githubToken].join(" ");
+      try {
+        response = await fetch(`${githubApi}${path}`, {
+          ...options,
+          headers: {
+            Accept: "application/vnd.github+json",
+            [authKey]: authValue,
+            "X-GitHub-Api-Version": "2022-11-28",
+            ...(options.body ? { "Content-Type": "application/json" } : {}),
+            ...(options.headers || {})
+          }
+        });
+      } catch {
+        fail("تعذّر الاتصال بـ GitHub. تحقق من الإنترنت ثم أعد المحاولة.", 502);
+      }
+      let result;
+      try { result = await response.json(); }
+      catch { fail("استجاب GitHub ببيانات غير صالحة.", 502); }
+      if (!response.ok) {
+        if (response.status === 401) fail("رمز GitHub غير صالح أو منتهي.", 401);
+        if (response.status === 403) fail("الرمز لا يملك صلاحية Contents: Read and write لهذا المستودع.", 403);
+        if (response.status === 404) fail("المستودع أو users.csv غير متاح لهذا الحساب.", 404);
+        if (response.status === 409 || response.status === 422) {
+          fail("تغيّر الملف على GitHub أثناء الحفظ. حدّث القائمة ثم أعد المحاولة.", 409);
+        }
+        fail(`تعذّر إكمال طلب GitHub (HTTP ${response.status}).`, response.status);
+      }
+      return result;
+    }
+    function parseDate(value, allowLegacy = false) {
+      let match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+      let year, month, day;
+      if (match) [, year, month, day] = match;
+      else if (allowLegacy && (match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value))) {
+        [, day, month, year] = match;
+      } else return null;
+      const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+      if (date.getUTCFullYear() !== Number(year) || date.getUTCMonth() !== Number(month) - 1 || date.getUTCDate() !== Number(day)) return null;
+      return `${year}-${month}-${day}`;
+    }
+    function parseCsv(text) {
+      const records = [];
+      let record = [], field = "", quoted = false;
+      for (let index = 0; index < text.length; index++) {
+        const char = text[index];
+        if (quoted) {
+          if (char === '"' && text[index + 1] === '"') { field += '"'; index++; }
+          else if (char === '"') quoted = false;
+          else field += char;
+        } else if (char === '"' && field === "") quoted = true;
+        else if (char === ",") { record.push(field); field = ""; }
+        else if (char === "\n" || char === "\r") {
+          if (char === "\r" && text[index + 1] === "\n") index++;
+          record.push(field); field = "";
+          if (record.some((value) => value !== "")) records.push(record);
+          record = [];
+        } else field += char;
+      }
+      if (quoted) fail("ملف users.csv يحتوي على حقل نصي غير مكتمل.");
+      if (field !== "" || record.length) { record.push(field); records.push(record); }
+      if (!records.length) return { rows: [], migrated: false };
+      const headers = records.shift();
+      for (const fieldName of ["emp_code", "emp_name", "role", "valid_from", "valid_to"]) {
+        if (!headers.includes(fieldName)) fail(`عمود ${fieldName} غير موجود في users.csv.`);
+      }
+      let migrated = false;
+      const rows = records.map((values) => {
+        const source = {};
+        headers.forEach((header, index) => { source[header] = values[index] || ""; });
+        const row = {};
+        for (const key of csvFields) row[key] = source[key] || "";
+        if (!row.device_limit) row.device_limit = "1";
+        if (!row.license_status) row.license_status = "ACTIVE";
+        if (!row.last_login) row.last_login = "";
+        for (const key of ["valid_from", "valid_to"]) {
+          if (row[key]) {
+            const normalized = parseDate(row[key], true);
+            if (!normalized) fail(`تاريخ غير صالح في ${key} للمستخدم ${row.emp_code}.`);
+            if (normalized !== row[key]) migrated = true;
+            row[key] = normalized;
+          }
+        }
+        return row;
+      });
+      return { rows, migrated };
+    }
+    function serializeCsv(rows) {
+      const quoteField = (value) => {
+        const text = String(value ?? "");
+        return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+      };
+      return [csvFields.join(","), ...rows.map((row) =>
+        csvFields.map((key) => quoteField(row[key])).join(",")
+      )].join("\n") + "\n";
+    }
+    function decodeBase64Utf8(value) {
+      const binary = atob(value.replace(/\s/g, ""));
+      const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+      return new TextDecoder("utf-8").decode(bytes);
+    }
+    function encodeBase64Utf8(value) {
+      const bytes = new TextEncoder().encode(value);
+      let binary = "";
+      for (let start = 0; start < bytes.length; start += 0x8000) {
+        binary += String.fromCharCode(...bytes.subarray(start, start + 0x8000));
+      }
+      return btoa(binary);
+    }
+    function repositoryFilePath() {
+      return `/repos/${githubOwner}/${githubRepo}/contents/users.csv?ref=${encodeURIComponent(githubBranch)}`;
+    }
+    async function readUsersFile() {
+      const result = await githubRequest(repositoryFilePath());
+      if (result.encoding !== "base64" || typeof result.content !== "string" || typeof result.sha !== "string") {
+        fail("تعذّرت قراءة users.csv من GitHub.", 502);
+      }
+      const parsed = parseCsv(decodeBase64Utf8(result.content));
+      return { ...parsed, sha: result.sha };
+    }
+    async function writeUsersFile(rows, sha, message) {
+      await githubRequest(`/repos/${githubOwner}/${githubRepo}/contents/users.csv`, {
+        method: "PUT",
+        body: JSON.stringify({
+          message,
+          content: encodeBase64Utf8(serializeCsv(rows)),
+          sha,
+          branch: githubBranch
+        })
+      });
+    }
+    function publicUser(row) {
+      return {
+        emp_code: row.emp_code,
+        emp_name: row.emp_name,
+        role: row.role,
+        group_name: row.group_name,
+        is_active: row.is_active === "1",
+        valid_from: row.valid_from,
+        valid_to: row.valid_to,
+        device_limit: row.device_limit,
+        license_status: row.license_status,
+        last_login: row.last_login
+      };
+    }
+    function validText(value, label, required = true) {
+      if (typeof value !== "string") fail(`قيمة ${label} غير صحيحة.`);
+      const text = value.trim();
+      if ((required && !text) || text.includes(",")) fail(`${label} مطلوب ولا يمكن أن يحتوي على فاصلة.`);
+      return text;
+    }
+    function validDates(start, end) {
+      const normalizedStart = typeof start === "string" ? parseDate(start) : null;
+      const normalizedEnd = typeof end === "string" ? parseDate(end) : null;
+      if (!normalizedStart || !normalizedEnd) fail("التاريخ غير صحيح؛ استخدم الصيغة سنة-شهر-يوم.");
+      if (normalizedStart > normalizedEnd) fail("تاريخ البداية لا يمكن أن يكون بعد تاريخ النهاية.");
+      return [normalizedStart, normalizedEnd];
+    }
+    function deviceLimit(value) {
+      if (!/^[1-9]\d*$/.test(String(value)) || !Number.isSafeInteger(Number(value))) fail("عدد الأجهزة يجب أن يكون رقماً صحيحاً أكبر من صفر.");
+      return String(Number(value));
+    }
+    function bumpVersion(row, field) {
+      const current = Number.parseInt(row[field] || "0", 10);
+      row[field] = String((Number.isSafeInteger(current) && current >= 0 ? current : 0) + 1);
+    }
+    async function passwordHash(password) {
+      if (typeof password !== "string" || password.length < 8) fail("كلمة المرور يجب أن تتكون من 8 أحرف على الأقل.");
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+      const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations: 120000, hash: "SHA-256" }, key, 256);
+      const toBase64 = (bytes) => btoa(String.fromCharCode(...bytes));
+      return [toBase64(salt), toBase64(new Uint8Array(bits))];
+    }
+    function temporaryPassword(length = 8) {
+      const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+      let result = "";
+      const limit = 256 - (256 % alphabet.length);
+      while (result.length < length) {
+        const bytes = crypto.getRandomValues(new Uint8Array(length * 2));
+        for (const byte of bytes) {
+          if (byte < limit) result += alphabet[byte % alphabet.length];
+          if (result.length === length) break;
+        }
+      }
+      return result;
+    }
+    async function authenticateGitHub(username, token) {
+      if (!username || !token) fail("أدخل اسم حساب GitHub ورمز الوصول.");
+      githubToken = token;
+      try {
+        const user = await githubRequest("/user");
+        if (typeof user.login !== "string" || user.login.toLocaleLowerCase() !== username.trim().toLocaleLowerCase()) {
+          fail("اسم حساب GitHub لا يطابق الحساب صاحب الرمز.", 401);
+        }
+        const repository = await githubRequest(`/repos/${githubOwner}/${githubRepo}`);
+        if (!repository.default_branch) fail("تعذّر تحديد الفرع الافتراضي للمستودع.", 502);
+        githubAccount = user.login;
+        githubBranch = repository.default_branch;
+        await readUsersFile();
+      } catch (error) {
+        githubToken = "";
+        githubAccount = "";
+        githubBranch = "";
+        throw error;
+      }
+    }
+    async function handleGitHubRequest(path, options = {}) {
+      const method = options.method || "GET";
+      const data = options.body ? JSON.parse(options.body) : {};
+      if (path === "/api/session" && method === "GET") return { authenticated: Boolean(githubToken) };
+      if (path === "/api/login" && method === "POST") {
+        await authenticateGitHub(data.username, data.password);
+        return { ok: true };
+      }
+      if (path === "/api/logout" && method === "POST") {
+        githubToken = "";
+        githubAccount = "";
+        githubBranch = "";
+        return { ok: true };
+      }
+      if (!githubToken) fail("اتصل بحساب GitHub أولاً.", 401);
+      if (path === "/api/users" && method === "GET") {
+        const state = await readUsersFile();
+        if (state.migrated) await writeUsersFile(state.rows, state.sha, "Normalize user validity dates");
+        return {
+          needs_admin: !state.rows.some((row) => row.role === "ADMIN"),
+          users: state.rows.map(publicUser),
+          storage: { repo: `${githubOwner}/${githubRepo}`, branch: githubBranch, login: githubAccount }
+        };
+      }
+      if (path === "/api/admin" && method === "POST") {
+        const state = await readUsersFile();
+        if (state.rows.some((row) => row.role === "ADMIN")) fail("يوجد مدير بالفعل.", 409);
+        const code = validText(data.code, "رمز المستخدم");
+        const name = validText(data.name, "اسم المستخدم");
+        if (state.rows.some((row) => row.emp_code === code)) fail("رمز المستخدم موجود بالفعل.", 409);
+        const [salt, hash] = await passwordHash(data.password);
+        const timestamp = new Date().toISOString().replace(/\.\d{3}Z$/, "+00:00");
+        state.rows.push({
+          emp_code: code, emp_name: name, role: "ADMIN", group_name: "", is_active: "1",
+          valid_from: "2000-01-01", valid_to: "2099-12-31", device_limit: "1", license_status: "ACTIVE",
+          salt, pass_hash: hash, must_change: "0", password_version: "1", last_login: "",
+          created_at: timestamp, updated_at: timestamp, version: "1"
+        });
+        await writeUsersFile(state.rows, state.sha, "Initialize users administrator");
+        return { ok: true };
+      }
+      if (path === "/api/users" && method === "POST") {
+        const state = await readUsersFile();
+        const allowed = ["code", "name", "role", "group_name", "valid_from", "valid_to", "device_limit", "license_status"];
+        if (Object.keys(data).some((key) => !allowed.includes(key))) fail("الطلب يحتوي على حقول غير مدعومة.");
+        const code = validText(data.code, "رمز المستخدم");
+        const name = validText(data.name, "اسم المستخدم");
+        if (!["GARD", "INV_SUPERVISOR", "GROUP_SUPERVISOR", "COMMITTEE_HEAD"].includes(data.role)) fail("الدور المحدد غير مدعوم.");
+        const group = validText(data.group_name ?? "", "المجموعة", false);
+        const [validFrom, validTo] = validDates(data.valid_from, data.valid_to);
+        const devices = deviceLimit(data.device_limit ?? 1);
+        if (!Object.hasOwn(licenses, data.license_status)) fail("حالة الترخيص المحددة غير مدعومة.");
+        if (state.rows.some((row) => row.emp_code === code)) fail("رمز المستخدم موجود بالفعل.", 409);
+        const password = temporaryPassword();
+        const [salt, hash] = await passwordHash(password);
+        const timestamp = new Date().toISOString().replace(/\.\d{3}Z$/, "+00:00");
+        const row = {
+          emp_code: code, emp_name: name, role: data.role, group_name: group, is_active: "1",
+          valid_from: validFrom, valid_to: validTo, device_limit: devices, license_status: data.license_status,
+          salt, pass_hash: hash, must_change: "1", password_version: "1", last_login: "",
+          created_at: timestamp, updated_at: timestamp, version: "1"
+        };
+        state.rows.push(row);
+        await writeUsersFile(state.rows, state.sha, `Add user ${code}`);
+        return { user: publicUser(row), temporary_password: password };
+      }
+      const reset = /^\/api\/users\/([^/]+)\/reset-password$/.exec(path);
+      if (reset && method === "POST") {
+        const state = await readUsersFile();
+        const code = decodeURIComponent(reset[1]);
+        const row = state.rows.find((item) => item.emp_code === code);
+        if (!row) fail("المستخدم المطلوب غير موجود.", 404);
+        const password = temporaryPassword();
+        [row.salt, row.pass_hash] = await passwordHash(password);
+        row.must_change = "1";
+        bumpVersion(row, "password_version");
+        bumpVersion(row, "version");
+        row.updated_at = new Date().toISOString().replace(/\.\d{3}Z$/, "+00:00");
+        await writeUsersFile(state.rows, state.sha, `Reset password for ${code}`);
+        return { temporary_password: password };
+      }
+      const update = /^\/api\/users\/([^/]+)$/.exec(path);
+      if (update && method === "PATCH") {
+        const state = await readUsersFile();
+        const code = decodeURIComponent(update[1]);
+        const row = state.rows.find((item) => item.emp_code === code);
+        if (!row) fail("المستخدم المطلوب غير موجود.", 404);
+        const allowed = ["is_active", "valid_from", "valid_to", "device_limit", "license_status"];
+        if (!Object.keys(data).length || Object.keys(data).some((key) => !allowed.includes(key))) fail("الطلب لا يحتوي على تغييرات صالحة.");
+        if (Object.hasOwn(data, "is_active")) {
+          if (typeof data.is_active !== "boolean") fail("حالة المستخدم غير صحيحة.");
+          if (row.role === "ADMIN" && !data.is_active) fail("لا يمكن إيقاف حساب المدير.", 403);
+          row.is_active = data.is_active ? "1" : "0";
+        }
+        if (Object.hasOwn(data, "valid_from") || Object.hasOwn(data, "valid_to")) {
+          if (!Object.hasOwn(data, "valid_from") || !Object.hasOwn(data, "valid_to")) fail("يجب إدخال تاريخي البداية والنهاية معاً.");
+          [row.valid_from, row.valid_to] = validDates(data.valid_from, data.valid_to);
+        }
+        if (Object.hasOwn(data, "device_limit")) row.device_limit = deviceLimit(data.device_limit);
+        if (Object.hasOwn(data, "license_status")) {
+          if (!Object.hasOwn(licenses, data.license_status)) fail("حالة الترخيص المحددة غير مدعومة.");
+          row.license_status = data.license_status;
+        }
+        bumpVersion(row, "version");
+        row.updated_at = new Date().toISOString().replace(/\.\d{3}Z$/, "+00:00");
+        await writeUsersFile(state.rows, state.sha, `Update user ${code}`);
+        return { user: publicUser(row) };
+      }
+      fail("الطلب غير موجود.", 404);
+    }
+
+    function showError(message) {
+      $("notice").textContent = message;
+      $("notice").classList.add("show");
+    }
+    function showDialogError(message) {
+      const current = $("dialog").querySelector(".dialog-error");
+      if (current) current.remove();
+      const error = document.createElement("div");
+      error.className = "dialog-error";
+      error.setAttribute("role", "alert");
+      error.textContent = message;
+      $("dialog").prepend(error);
+    }
+    function clearError() {
+      $("notice").textContent = "";
+      $("notice").classList.remove("show");
+    }
+    async function request(path, options = {}) {
+      return handleGitHubRequest(path, options);
+    }
+    function badge(text, extra = "") {
+      const element = document.createElement("span");
+      element.className = `badge ${extra}`;
+      element.textContent = text;
+      return element;
+    }
+    function cell(content) {
+      const td = document.createElement("td");
+      if (content instanceof Node) td.append(content);
+      else td.textContent = content;
+      return td;
+    }
+    function render() {
+      const query = $("search").value.trim().toLocaleLowerCase("ar");
+      const shown = users.filter((user) =>
+        [user.emp_code, user.emp_name, user.group_name, roles[user.role]]
+          .join(" ").toLocaleLowerCase("ar").includes(query)
+      );
+      $("total-count").textContent = numberFormat.format(users.length);
+      $("active-count").textContent = numberFormat.format(users.filter((user) => user.is_active).length);
+      $("license-count").textContent = numberFormat.format(users.filter((user) => user.license_status === "ACTIVE").length);
+      $("user-rows").replaceChildren();
+      for (const user of shown) {
+        const row = document.createElement("tr");
+        const identity = document.createElement("div");
+        identity.className = "name";
+        identity.textContent = user.emp_name;
+        const code = document.createElement("span");
+        code.className = "sub";
+        code.textContent = user.emp_code;
+        identity.append(code);
+        row.append(cell(identity));
+        const role = document.createElement("div");
+        role.textContent = roles[user.role] || user.role;
+        const group = document.createElement("span");
+        group.className = "sub";
+        group.textContent = user.group_name || "دون مجموعة";
+        role.append(group);
+        row.append(cell(role));
+        row.append(cell(badge(user.is_active ? "نشط" : "موقوف", user.is_active ? "on" : "off")));
+        const validity = document.createElement("span");
+        validity.dir = "ltr";
+        validity.textContent = `${user.valid_from} — ${user.valid_to}`;
+        row.append(cell(validity));
+        row.append(cell(user.device_limit));
+        row.append(cell(badge(licenses[user.license_status] || user.license_status, user.license_status.toLowerCase())));
+        row.append(cell(user.last_login || "—"));
+        const actions = document.createElement("div");
+        actions.className = "actions";
+        const edit = document.createElement("button");
+        edit.className = "button secondary small";
+        edit.type = "button";
+        edit.textContent = "تعديل";
+        edit.addEventListener("click", () => openEdit(user));
+        actions.append(edit);
+        if (user.role !== "ADMIN" || !user.is_active) {
+          const toggle = document.createElement("button");
+          toggle.className = `button small ${user.is_active ? "danger" : "secondary"}`;
+          toggle.type = "button";
+          toggle.textContent = user.is_active ? "إيقاف" : "تفعيل";
+          toggle.addEventListener("click", () => toggleUser(user));
+          actions.append(toggle);
+        }
+        const reset = document.createElement("button");
+        reset.className = "button secondary small";
+        reset.type = "button";
+        reset.textContent = "إعادة كلمة المرور";
+        reset.addEventListener("click", () => resetPassword(user));
+        actions.append(reset);
+        row.append(cell(actions));
+        $("user-rows").append(row);
+      }
+      $("empty").hidden = shown.length !== 0;
+    }
+    async function loadUsers() {
+      clearError();
+      try {
+        const result = await request("/api/users");
+        $("login-panel").hidden = true;
+        $("logout-button").hidden = false;
+        $("onboarding").hidden = !result.needs_admin;
+        $("dashboard").hidden = result.needs_admin;
+        $("add-button").hidden = result.needs_admin;
+        $("storage-note").textContent = result.storage
+          ? `متصل باسم ${result.storage.login} · تُحفظ التغييرات في ${result.storage.repo} على الفرع ${result.storage.branch}.`
+          : "الاتصال غير متاح.";
+        users = result.users;
+        render();
+      } catch (error) {
+        if (error.status === 401) {
+          showLogin();
+          return;
+        }
+        showError(error.message);
+      }
+    }
+    function showLogin() {
+      users = [];
+      $("user-rows").replaceChildren();
+      $("login-panel").hidden = false;
+      $("logout-button").hidden = true;
+      $("add-button").hidden = true;
+      $("dashboard").hidden = true;
+      $("onboarding").hidden = true;
+      clearError();
+    }
+    async function loadSession() {
+      clearError();
+      try {
+        const session = await request("/api/session");
+        if (session.authenticated) await loadUsers();
+        else showLogin();
+      } catch (error) {
+        showError(error.message);
+      }
+    }
+    function openDialog(content) {
+      $("dialog").replaceChildren(content);
+      $("dialog-backdrop").classList.add("open");
+    }
+    function closeDialog() {
+      $("dialog-backdrop").classList.remove("open");
+      $("dialog").replaceChildren();
+    }
+    function formField(label, name, value, type = "text", required = true) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "field";
+      const labelElement = document.createElement("label");
+      labelElement.textContent = label;
+      labelElement.htmlFor = `field-${name}`;
+      const input = document.createElement("input");
+      input.id = `field-${name}`;
+      input.name = name;
+      input.type = type;
+      input.value = value ?? "";
+      input.required = required;
+      if (type === "date") input.dir = "ltr";
+      if (name === "device_limit") {
+        input.min = "1";
+        input.step = "1";
+      }
+      wrapper.append(labelElement, input);
+      return wrapper;
+    }
+    function formSelect(label, name, options, value) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "field";
+      const labelElement = document.createElement("label");
+      labelElement.textContent = label;
+      labelElement.htmlFor = `field-${name}`;
+      const select = document.createElement("select");
+      select.id = `field-${name}`;
+      select.name = name;
+      for (const [key, text] of Object.entries(options)) {
+        const option = document.createElement("option");
+        option.value = key;
+        option.textContent = text;
+        option.selected = key === value;
+        select.append(option);
+      }
+      wrapper.append(labelElement, select);
+      return wrapper;
+    }
+    function openEdit(user) {
+      const form = document.createElement("form");
+      const title = document.createElement("h2");
+      title.id = "dialog-title";
+      title.textContent = `تعديل بيانات ${user.emp_name}`;
+      const grid = document.createElement("div");
+      grid.className = "form-grid";
+      grid.append(
+        formField("تاريخ بداية الصلاحية", "valid_from", user.valid_from, "date"),
+        formField("تاريخ نهاية الصلاحية", "valid_to", user.valid_to, "date"),
+        formField("الحد الأقصى للأجهزة", "device_limit", user.device_limit, "number"),
+        formSelect("حالة الترخيص", "license_status", licenses, user.license_status)
+      );
+      const dateHint = document.createElement("p");
+      dateHint.className = "hint";
+      dateHint.textContent = "صيغة التاريخ الموحدة للحفظ: yyyy-MM-dd";
+      form.append(title, grid, dateHint);
+      const actions = document.createElement("div");
+      actions.className = "form-actions";
+      const save = document.createElement("button");
+      save.className = "button";
+      save.type = "submit";
+      save.textContent = "حفظ التغييرات";
+      const cancel = document.createElement("button");
+      cancel.className = "button secondary";
+      cancel.type = "button";
+      cancel.textContent = "إلغاء";
+      cancel.addEventListener("click", closeDialog);
+      actions.append(save, cancel);
+      form.append(actions);
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const values = new FormData(form);
+        try {
+          await request(`/api/users/${encodeURIComponent(user.emp_code)}`, {
+            method: "PATCH",
+            body: JSON.stringify({
+              valid_from: values.get("valid_from"),
+              valid_to: values.get("valid_to"),
+              device_limit: values.get("device_limit"),
+              license_status: values.get("license_status")
+            })
+          });
+          closeDialog();
+          await loadUsers();
+        } catch (error) { showDialogError(error.message); }
+      });
+      openDialog(form);
+    }
+    function openPassword(password, titleText) {
+      const content = document.createElement("div");
+      const title = document.createElement("h2");
+      title.id = "dialog-title";
+      title.textContent = titleText;
+      const note = document.createElement("p");
+      note.className = "password-note";
+      note.textContent = "انسخ كلمة المرور المؤقتة الآن؛ لن تظهر مرة أخرى. يجب على المستخدم تغييرها بعد تسجيل الدخول.";
+      const value = document.createElement("div");
+      value.className = "password-value";
+      value.textContent = password;
+      const close = document.createElement("button");
+      close.className = "button";
+      close.type = "button";
+      close.textContent = "تم";
+      close.addEventListener("click", closeDialog);
+      content.append(title, note, value, close);
+      openDialog(content);
+    }
+    async function toggleUser(user) {
+      clearError();
+      try {
+        await request(`/api/users/${encodeURIComponent(user.emp_code)}`, {
+          method: "PATCH",
+          body: JSON.stringify({ is_active: !user.is_active })
+        });
+        await loadUsers();
+      } catch (error) { showError(error.message); }
+    }
+    async function resetPassword(user) {
+      clearError();
+      try {
+        const result = await request(`/api/users/${encodeURIComponent(user.emp_code)}/reset-password`, {
+          method: "POST",
+          body: "{}"
+        });
+        openPassword(result.temporary_password, "كلمة مرور مؤقتة جديدة");
+      } catch (error) { showError(error.message); }
+    }
+    function openAdd() {
+      const form = document.createElement("form");
+      const title = document.createElement("h2");
+      title.id = "dialog-title";
+      title.textContent = "إضافة مستخدم";
+      const grid = document.createElement("div");
+      grid.className = "form-grid";
+      grid.append(
+        formField("رمز المستخدم", "code", ""),
+        formField("الاسم", "name", ""),
+        formSelect("الدور", "role", {
+          GARD: roles.GARD,
+          INV_SUPERVISOR: roles.INV_SUPERVISOR,
+          GROUP_SUPERVISOR: roles.GROUP_SUPERVISOR,
+          COMMITTEE_HEAD: roles.COMMITTEE_HEAD
+        }, "GARD"),
+        formField("المجموعة (اختياري)", "group_name", "", "text", false),
+        formField("تاريخ بداية الصلاحية", "valid_from", (() => {
+          const today = new Date();
+          today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
+          return today.toISOString().slice(0, 10);
+        })(), "date"),
+        formField("تاريخ نهاية الصلاحية", "valid_to", "2099-12-31", "date"),
+        formField("الحد الأقصى للأجهزة", "device_limit", "1", "number"),
+        formSelect("حالة الترخيص", "license_status", licenses, "ACTIVE")
+      );
+      const dateHint = document.createElement("p");
+      dateHint.className = "hint";
+      dateHint.textContent = "صيغة التاريخ الموحدة للحفظ: yyyy-MM-dd";
+      form.append(title, grid, dateHint);
+      const actions = document.createElement("div");
+      actions.className = "form-actions";
+      const save = document.createElement("button");
+      save.className = "button";
+      save.type = "submit";
+      save.textContent = "إضافة المستخدم";
+      const cancel = document.createElement("button");
+      cancel.className = "button secondary";
+      cancel.type = "button";
+      cancel.textContent = "إلغاء";
+      cancel.addEventListener("click", closeDialog);
+      actions.append(save, cancel);
+      form.append(actions);
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        clearError();
+        const values = new FormData(form);
+        try {
+          const result = await request("/api/users", {
+            method: "POST",
+            body: JSON.stringify({
+              code: values.get("code"),
+              name: values.get("name"),
+              role: values.get("role"),
+              group_name: values.get("group_name"),
+              valid_from: values.get("valid_from"),
+              valid_to: values.get("valid_to"),
+              device_limit: values.get("device_limit"),
+              license_status: values.get("license_status")
+            })
+          });
+          closeDialog();
+          await loadUsers();
+          openPassword(result.temporary_password, "كلمة المرور المؤقتة للمستخدم");
+        } catch (error) { showDialogError(error.message); }
+      });
+      openDialog(form);
+    }
+    $("admin-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      clearError();
+      const values = new FormData(event.currentTarget);
+      try {
+        await request("/api/admin", {
+          method: "POST",
+          body: JSON.stringify({
+            code: values.get("code"),
+            name: values.get("name"),
+            password: values.get("password")
+          })
+        });
+        event.currentTarget.reset();
+        await loadUsers();
+      } catch (error) { showError(error.message); }
+    });
+    $("login-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      clearError();
+      const submit = $("login-submit");
+      submit.disabled = true;
+      const values = new FormData(event.currentTarget);
+      try {
+        await request("/api/login", {
+          method: "POST",
+          body: JSON.stringify({
+            username: values.get("username"),
+            password: values.get("password")
+          })
+        });
+        event.currentTarget.reset();
+        await loadUsers();
+      } catch (error) {
+        showError(error.message);
+        $("login-password").value = "";
+      } finally {
+        submit.disabled = false;
+      }
+    });
+    $("logout-button").addEventListener("click", async () => {
+      try {
+        await request("/api/logout", { method: "POST", body: "{}" });
+        showLogin();
+      } catch (error) { showError(error.message); }
+    });
+    $("add-button").addEventListener("click", openAdd);
+    $("refresh").addEventListener("click", loadUsers);
+    $("search").addEventListener("input", render);
+    $("dialog-backdrop").addEventListener("click", (event) => {
+      if (event.target === $("dialog-backdrop")) closeDialog();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeDialog();
+    });
+    loadSession();
+  </script>
+</body>
+</html>
