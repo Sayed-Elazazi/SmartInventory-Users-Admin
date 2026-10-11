@@ -872,7 +872,8 @@
     $("admin-form").addEventListener("submit", async (event) => {
       event.preventDefault();
       clearError();
-      const values = new FormData(event.currentTarget);
+      const form = event.currentTarget;
+      const values = new FormData(form);
       try {
         await request("/api/admin", {
           method: "POST",
@@ -882,16 +883,17 @@
             password: values.get("password")
           })
         });
-        event.currentTarget.reset();
+        form.reset();
         await loadUsers();
       } catch (error) { showError(error.message); }
     });
     $("login-form").addEventListener("submit", async (event) => {
       event.preventDefault();
+      const form = event.currentTarget;
       clearError();
       const submit = $("login-submit");
       submit.disabled = true;
-      const values = new FormData(event.currentTarget);
+      const values = new FormData(form);
       try {
         await request("/api/login", {
           method: "POST",
@@ -900,7 +902,7 @@
             password: values.get("password")
           })
         });
-        event.currentTarget.reset();
+        form.reset();
         await loadUsers();
       } catch (error) {
         showError(error.message);
