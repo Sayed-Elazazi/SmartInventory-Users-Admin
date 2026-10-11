@@ -132,7 +132,7 @@
         <form id="login-form">
           <div class="form-grid">
             <div class="field full"><label for="login-username">اسم حساب GitHub</label><input id="login-username" name="username" required maxlength="128" autocomplete="username" autocapitalize="none" spellcheck="false"></div>
-            <div class="field full"><label for="login-password">رمز الوصول الشخصي (Fine-grained token)</label><input id="login-password" name="password" type="password" required maxlength="512" autocomplete="off" autocapitalize="none" spellcheck="false"><span class="hint">أنشئ رمزاً لهذا المستودع فقط، بصلاحية Contents: Read and write. لا يُحفظ الرمز في المتصفح أو GitHub Pages. <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener noreferrer">إنشاء رمز GitHub</a></span></div>
+            <div class="field full"><label for="login-password">رمز الوصول الشخصي (Fine-grained token)</label><input id="login-password" name="password" type="password" required maxlength="512" autocomplete="off" autocapitalize="none" spellcheck="false"><span class="hint">مهم: الصفحة مستضافة في SmartInventory-Users-Admin، لكن ملف المستخدمين موجود في المستودع الخاص SmartInventory-Users. أنشئ الرمز للمستودع SmartInventory-Users تحديداً (وليس SmartInventory-Users-Admin)، بصلاحية Contents: Read and write. لا يُحفظ الرمز في المتصفح أو GitHub Pages. <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener noreferrer">إنشاء رمز GitHub</a></span></div>
           </div>
           <div class="form-actions"><button id="login-submit" class="button" type="submit">اتصال آمن</button></div>
         </form>
@@ -234,7 +234,7 @@
       if (!response.ok) {
         if (response.status === 401) fail("رمز GitHub غير صالح أو منتهي.", 401);
         if (response.status === 403) fail("الرمز لا يملك صلاحية Contents: Read and write لهذا المستودع.", 403);
-        if (response.status === 404) fail("المستودع أو users.csv غير متاح لهذا الحساب.", 404);
+        if (response.status === 404) fail("لا يستطيع هذا الرمز رؤية users.csv. عند إنشاء Fine-grained token اختر المستودع الخاص SmartInventory-Users تحديداً، وليس مستودع الصفحة SmartInventory-Users-Admin، وامنحه Contents: Read and write.", 404);
         if (response.status === 409 || response.status === 422) {
           fail("تغيّر الملف على GitHub أثناء الحفظ. حدّث القائمة ثم أعد المحاولة.", 409);
         }
