@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f5f7fb">
+  <link rel="icon" type="image/png" href="assets/smartinventory-logo.png">
   <title>إدارة المستخدمين</title>
   <style>
     :root {
@@ -27,7 +28,8 @@
     header { padding: 28px 0 22px; }
     .topline { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
     .brand { display: flex; align-items: center; gap: 13px; }
-    .mark { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 14px; background: #e8edff; color: var(--primary); font-size: 23px; font-weight: 800; }
+    .mark { display: grid; place-items: center; width: 46px; height: 46px; overflow: hidden; border-radius: 14px; background: transparent; }
+    .mark img { display: block; width: 100%; height: 100%; object-fit: contain; border-radius: 12px; }
     h1 { margin: 0; font-size: 25px; letter-spacing: -.4px; }
     .subtitle { margin: 5px 0 0; color: var(--muted); font-size: 14px; }
     .button { border: 0; border-radius: 10px; padding: 11px 16px; background: var(--primary); color: white; font-weight: 700; box-shadow: 0 4px 10px #315ee826; }
@@ -47,6 +49,8 @@
     .panel-head { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 19px 21px; border-bottom: 1px solid var(--line); }
     .panel-head h2 { margin: 0; font-size: 17px; }
     .toolbar { display: flex; gap: 9px; align-items: center; }
+    .refresh-status { color: var(--muted); font-size: 11px; white-space: nowrap; }
+    .button:disabled { cursor: wait; opacity: .65; }
     .search { width: min(270px, 42vw); padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; outline: none; background: #fbfcfe; }
     .search:focus, .field input:focus, .field select:focus { border-color: #7892ed; box-shadow: 0 0 0 3px #315ee81a; }
     .table-wrap { overflow-x: auto; }
@@ -112,7 +116,7 @@
     <header class="shell">
       <div class="topline">
         <div class="brand">
-          <div class="mark" aria-hidden="true">م</div>
+          <div class="mark"><img src="assets/smartinventory-logo.png" alt="شعار Smart Inventory"></div>
           <div>
             <h1>إدارة المستخدمين</h1>
             <p class="subtitle">إدارة الحسابات والصلاحيات والتراخيص من مكان واحد</p>
@@ -158,7 +162,7 @@
         <section class="panel">
           <div class="panel-head">
             <h2>قائمة المستخدمين</h2>
-            <div class="toolbar"><input id="search" class="search" type="search" placeholder="ابحث بالاسم أو الرمز أو المجموعة" aria-label="بحث المستخدمين"><button id="refresh" class="button secondary small" type="button">تحديث</button></div>
+            <div class="toolbar"><input id="search" class="search" type="search" placeholder="ابحث بالاسم أو الرمز أو المجموعة" aria-label="بحث المستخدمين"><button id="refresh" class="button secondary small" type="button">تحديث من GitHub</button><span id="refresh-status" class="refresh-status" role="status" aria-live="polite"></span></div>
           </div>
           <div class="table-wrap">
             <table>
@@ -217,6 +221,7 @@
       try {
         response = await fetch(`${githubApi}${path}`, {
           ...options,
+          cache: "no-store",
           headers: {
             Accept: "application/vnd.github+json",
             [authKey]: authValue,
@@ -638,12 +643,15 @@
           : "الاتصال غير متاح.";
         users = result.users;
         render();
+        $("refresh-status").textContent = `آخر جلب من GitHub: ${new Intl.DateTimeFormat("ar", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date())}`;
+        return true;
       } catch (error) {
         if (error.status === 401) {
           showLogin();
-          return;
+          return false;
         }
         showError(error.message);
+        return false;
       }
     }
     function showLogin() {
@@ -918,7 +926,22 @@
       } catch (error) { showError(error.message); }
     });
     $("add-button").addEventListener("click", openAdd);
-    $("refresh").addEventListener("click", loadUsers);
+    $("refresh").addEventListener("click", async () => {
+      const button = $("refresh");
+      button.disabled = true;
+      button.textContent = "جارٍ التحديث...";
+      try {
+        const refreshed = await loadUsers();
+        if (!refreshed) {
+          $("refresh-status").textContent = "تعذّر جلب البيانات؛ راجع رسالة الخطأ.";
+        } else {
+          $("refresh-status").textContent = `تم جلب أحدث البيانات من GitHub: ${new Intl.DateTimeFormat("ar", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date())}`;
+        }
+      } finally {
+        button.disabled = false;
+        button.textContent = "تحديث من GitHub";
+      }
+    });
     $("search").addEventListener("input", render);
     $("dialog-backdrop").addEventListener("click", (event) => {
       if (event.target === $("dialog-backdrop")) closeDialog();
