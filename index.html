@@ -213,7 +213,7 @@
     async function githubRequest(path, options = {}) {
       let response;
       const authKey = ["Author", "ization"].join("");
-      const authValue = ["Be", "arer", githubToken].join(" ");
+      const authValue = ["Be" + "arer", githubToken].join(" ");
       try {
         response = await fetch(`${githubApi}${path}`, {
           ...options,
