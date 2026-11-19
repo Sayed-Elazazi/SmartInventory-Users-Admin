@@ -166,7 +166,7 @@
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>المستخدم</th><th>الدور والمجموعة</th><th>الحالة</th><th>الصلاحية</th><th>الأجهزة</th><th>الترخيص</th><th>آخر دخول</th><th>الإجراءات</th></tr></thead>
+              <thead><tr><th>المستخدم</th><th>الدور والمجموعة</th><th>الحالة</th><th>الصلاحية</th><th>الأجهزة</th><th>الترخيص</th><th>آخر تسجيل دخول</th><th title="أحدث last_seen_at من جميع أجهزة المستخدم">آخر نشاط</th><th>الإجراءات</th></tr></thead>
               <tbody id="user-rows"></tbody>
             </table>
             <div id="empty" class="empty" hidden><strong>لا يوجد مستخدمون مطابقون</strong>جرّب تغيير كلمات البحث.</div>
@@ -204,7 +204,7 @@
       "emp_code", "emp_name", "role", "group_name", "is_active",
       "valid_from", "valid_to", "device_limit", "license_status",
       "salt", "pass_hash", "must_change", "password_version",
-      "last_login", "created_at", "updated_at", "version"
+      "last_login", "last_activity", "created_at", "updated_at", "version"
     ];
     const $ = (id) => document.getElementById(id);
     const numberFormat = new Intl.NumberFormat("ar");
@@ -292,6 +292,7 @@
         if (!row.device_limit) row.device_limit = "1";
         if (!row.license_status) row.license_status = "ACTIVE";
         if (!row.last_login) row.last_login = "";
+        if (!row.last_activity) row.last_activity = "";
         for (const key of ["valid_from", "valid_to"]) {
           if (row[key]) {
             const normalized = parseDate(row[key], true);
@@ -359,7 +360,8 @@
         valid_to: row.valid_to,
         device_limit: row.device_limit,
         license_status: row.license_status,
-        last_login: row.last_login
+        last_login: row.last_login,
+        last_activity: row.last_activity
       };
     }
     function validText(value, label, required = true) {
@@ -602,6 +604,7 @@
         row.append(cell(user.device_limit));
         row.append(cell(badge(licenses[user.license_status] || user.license_status, user.license_status.toLowerCase())));
         row.append(cell(user.last_login || "—"));
+        row.append(cell(user.last_activity || "—"));
         const actions = document.createElement("div");
         actions.className = "actions";
         const edit = document.createElement("button");
