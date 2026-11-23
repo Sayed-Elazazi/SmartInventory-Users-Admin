@@ -194,12 +194,15 @@
       BLOCKED: "محظور"
     };
     let users = [];
+    let deviceCounts = {};
+    let deviceCountsLoaded = false;
     let githubToken = "";
     let githubAccount = "";
     let githubBranch = "";
     const githubOwner = "Sayed-Elazazi";
     const githubRepo = "SmartInventory-Users";
     const githubApi = "https://api.github.com";
+    const authApiUrl = "https://script.google.com/macros/s/AKfycbz6pBYV_FMhWDTbRCEgpB3AoUN2IltvxUwtk5pYmjXAL2G58DgshC93rBTcgmOki-YsrA/exec";
     const csvFields = [
       "emp_code", "emp_name", "role", "group_name", "is_active",
       "valid_from", "valid_to", "device_limit", "license_status",
@@ -537,6 +540,37 @@
       fail("الطلب غير موجود.", 404);
     }
 
+    async function loadDeviceCounts() {
+      deviceCounts = {};
+      deviceCountsLoaded = false;
+      if (!githubToken) return false;
+
+      try {
+        const response = await fetch(authApiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            action: "admin_device_counts",
+            githubToken: githubToken
+          }),
+          cache: "no-store"
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const result = await response.json();
+        if (!result || result.success !== true || !result.counts || typeof result.counts !== "object") {
+          throw new Error("Invalid device-count response");
+        }
+
+        deviceCounts = result.counts;
+        deviceCountsLoaded = true;
+        return true;
+      } catch (error) {
+        console.warn("Device counts could not be loaded:", error);
+        return false;
+      }
+    }
+
     function showError(message) {
       $("notice").textContent = message;
       $("notice").classList.add("show");
@@ -601,7 +635,13 @@
         validity.dir = "ltr";
         validity.textContent = `${user.valid_from} — ${user.valid_to}`;
         row.append(cell(validity));
-        row.append(cell(user.device_limit));
+        const registeredDevices = deviceCountsLoaded
+          ? Number(deviceCounts[user.emp_code] || 0)
+          : null;
+        const deviceText = registeredDevices === null
+          ? `— / ${user.device_limit}`
+          : `${numberFormat.format(registeredDevices)} / ${numberFormat.format(Number(user.device_limit) || 1)}`;
+        row.append(cell(deviceText));
         row.append(cell(badge(licenses[user.license_status] || user.license_status, user.license_status.toLowerCase())));
         row.append(cell(user.last_login || "—"));
         row.append(cell(user.last_activity || "—"));
@@ -645,7 +685,11 @@
           ? `متصل باسم ${result.storage.login} · تُحفظ التغييرات في ${result.storage.repo} على الفرع ${result.storage.branch}.`
           : "الاتصال غير متاح.";
         users = result.users;
+        const countsLoaded = await loadDeviceCounts();
         render();
+        if (!countsLoaded) {
+          $("refresh-status").textContent = "تعذّر تحميل أعداد الأجهزة";
+        }
         $("refresh-status").textContent = `آخر جلب من GitHub: ${new Intl.DateTimeFormat("ar", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date())}`;
         return true;
       } catch (error) {
@@ -659,6 +703,8 @@
     }
     function showLogin() {
       users = [];
+      deviceCounts = {};
+      deviceCountsLoaded = false;
       $("user-rows").replaceChildren();
       $("login-panel").hidden = false;
       $("logout-button").hidden = true;
