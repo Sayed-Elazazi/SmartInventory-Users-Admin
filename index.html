@@ -640,8 +640,11 @@
           : null;
         const deviceText = registeredDevices === null
           ? `— / ${user.device_limit}`
-          : `${numberFormat.format(registeredDevices)} / ${numberFormat.format(Number(user.device_limit) || 1)}`;
-        row.append(cell(deviceText));
+          : `${registeredDevices} / ${Number(user.device_limit) || 1}`;
+        const deviceCell = document.createElement("span");
+        deviceCell.dir = "ltr";
+        deviceCell.textContent = deviceText;
+        row.append(cell(deviceCell));
         row.append(cell(badge(licenses[user.license_status] || user.license_status, user.license_status.toLowerCase())));
         row.append(cell(user.last_login || "—"));
         row.append(cell(user.last_activity || "—"));
@@ -687,10 +690,9 @@
         users = result.users;
         const countsLoaded = await loadDeviceCounts();
         render();
-        if (!countsLoaded) {
-          $("refresh-status").textContent = "تعذّر تحميل أعداد الأجهزة";
-        }
-        $("refresh-status").textContent = `آخر جلب من GitHub: ${new Intl.DateTimeFormat("ar", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date())}`;
+        $("refresh-status").textContent = countsLoaded
+          ? `آخر تحديث: ${new Intl.DateTimeFormat("ar", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date())}`
+          : "تعذّر تحميل أعداد الأجهزة";
         return true;
       } catch (error) {
         if (error.status === 401) {
